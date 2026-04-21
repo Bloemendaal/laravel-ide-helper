@@ -44,6 +44,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Schema\Builder;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Arr;
@@ -965,7 +966,14 @@ class ModelsCommand extends Command
 
         $relatedModel = $relationObj->getRelated();
 
-        return in_array('Illuminate\\Database\\Eloquent\\SoftDeletes', class_uses_recursive($relatedModel));
+        if (!in_array('Illuminate\\Database\\Eloquent\\SoftDeletes', class_uses_recursive($relatedModel))) {
+            return false;
+        }
+
+        $query = $relationObj->getQuery();
+        $builderReflection = new ReflectionClass($query);
+
+        return isset($builderReflection->getProperty('scopes')->getValue($query)[SoftDeletingScope::class]);
     }
 
     /**
